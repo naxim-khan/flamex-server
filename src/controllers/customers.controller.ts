@@ -6,7 +6,8 @@ import ApiResponse from '../common/api-response';
 export class CustomersController {
   static async getCustomers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page = '1', limit = '50', search } = req.query;      const customers = await CustomersService.getCustomers({
+      const { page = '1', limit = '50', search } = req.query;
+      const customers = await CustomersService.getCustomers({
         page: parseInt(page as string),
         limit: parseInt(limit as string),
         search: search as string,
@@ -77,9 +78,9 @@ export class CustomersController {
         return res.status(400).json(ApiResponse.error('Search query must be at least 2 characters'));
       }
       const customers = await CustomersService.searchCustomers((q as string).trim());
-      res.json(ApiResponse.success('Customers retrieved successfully', customers));
+      return res.json(ApiResponse.success('Customers retrieved successfully', customers));
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 

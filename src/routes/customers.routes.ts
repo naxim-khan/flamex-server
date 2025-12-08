@@ -19,6 +19,6 @@ router.put('/:id', validateRequest(updateCustomerSchema), CustomersController.up
 router.delete('/:id', CustomersController.deleteCustomer);
 router.get('/:id/orders', CustomersController.getCustomerOrders);
 router.get('/search', CustomersController.searchCustomers);
-
+router.get('/phone/:phone', CustomersController.getCustomerByPhone);
 
 export default router;
