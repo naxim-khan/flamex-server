@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: flamex_pos_postgres
+    environment:
+      POSTGRES_DB: flamex_pos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: flamex_pos_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  app:
+    build:
+      context: ..       # folder containing Dockerfile
+      dockerfile: Dockerfile
+    container_name: flamex_pos_app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/flamex_pos?schema=public"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+    ports:
+      - "5001:5001"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./logs:/app/logs
+      - /dev/bus/usb:/dev/bus/usb
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

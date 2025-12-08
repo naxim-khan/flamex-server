@@ -1,0 +1,112 @@
+pos-backend-postgres/
+├── .env
+├── .env.example
+├── .gitignore
+├── package.json
+├── tsconfig.json
+├── prisma/
+│   ├── schema.prisma
+│   └── seed.ts
+├── src/
+│   ├── common/
+│   │   ├── errors/
+│   │   │   ├── ApiError.ts
+│   │   │   ├── AppError.ts
+│   │   │   └── ErrorHandler.ts
+│   │   ├── api-response.ts
+│   │   └── constants.ts
+│   ├── config/
+│   │   ├── config.ts
+│   │   ├── database.ts
+│   │   ├── logger.ts
+│   │   └── redis.ts
+│   ├── controllers/
+│   │   ├── auth.controller.ts
+│   │   ├── categories.controller.ts
+│   │   ├── customers.controller.ts
+│   │   ├── delivery.controller.ts
+│   │   ├── expenses.controller.ts
+│   │   ├── menu-items.controller.ts
+│   │   ├── orders.controller.ts
+│   │   ├── printers.controller.ts
+│   │   ├── reports.controller.ts
+│   │   ├── riders.controller.ts
+│   │   ├── users.controller.ts
+│   │   └── index.ts
+│   ├── middlewares/
+│   │   ├── auth.middleware.ts
+│   │   ├── errorHandler.ts
+│   │   ├── jsonErrorHandler.ts
+│   │   ├── notFound.ts
+│   │   ├── rateLimiter.ts
+│   │   ├── sessionLimiter.ts
+│   │   ├── upload.middleware.ts
+│   │   └── validateRequest.ts
+│   ├── repositories/
+│   │   ├── categories.repository.ts
+│   │   ├── customers.repository.ts
+│   │   ├── expenses.repository.ts
+│   │   ├── menu-items.repository.ts
+│   │   ├── orders.repository.ts
+│   │   ├── riders.repository.ts
+│   │   ├── users.repository.ts
+│   │   └── index.ts
+│   ├── routes/
+│   │   ├── auth.routes.ts
+│   │   ├── categories.routes.ts
+│   │   ├── customers.routes.ts
+│   │   ├── delivery.routes.ts
+│   │   ├── expenses.routes.ts
+│   │   ├── index.ts
+│   │   ├── menu-items.routes.ts
+│   │   ├── orders.routes.ts
+│   │   ├── printers.routes.ts
+│   │   ├── reports.routes.ts
+│   │   ├── riders.routes.ts
+│   │   └── users.routes.ts
+│   ├── server/
+│   │   ├── app.ts
+│   │   └── server.ts
+│   ├── services/
+│   │   ├── auth.service.ts
+│   │   ├── categories.service.ts
+│   │   ├── customers.service.ts
+│   │   ├── delivery.service.ts
+│   │   ├── expenses.service.ts
+│   │   ├── menu-items.service.ts
+│   │   ├── orders.service.ts
+│   │   ├── printers.service.ts
+│   │   ├── reports.service.ts
+│   │   ├── riders.service.ts
+│   │   ├── users.service.ts
+│   │   └── index.ts
+│   ├── types/
+│   │   ├── express.d.ts
+│   │   ├── index.ts
+│   │   └── prisma.ts
+│   ├── utils/
+│   │   ├── auth.utils.ts
+│   │   ├── date.utils.ts
+│   │   ├── jwt.ts
+│   │   ├── pagination.utils.ts
+│   │   ├── password.ts
+│   │   ├── printer.utils.ts
+│   │   ├── prisma.utils.ts
+│   │   ├── prismaError.ts
+│   │   └── validation.utils.ts
+│   └── validations/
+│       ├── auth.validation.ts
+│       ├── categories.validation.ts
+│       ├── customers.validation.ts
+│       ├── delivery.validation.ts
+│       ├── expenses.validation.ts
+│       ├── menu-items.validation.ts
+│       ├── orders.validation.ts
+│       ├── riders.validation.ts
+│       ├── users.validation.ts
+│       └── index.ts
+└── scripts/
+    ├── clear-all-data.ts
+    ├── migrate-data.ts
+    ├── seed-database.ts
+    └── setup-admin.ts

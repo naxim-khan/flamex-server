@@ -1,0 +1,259 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enums
+enum OrderType {
+  dine_in
+  delivery
+}
+
+enum OrderStatus {
+  pending
+  preparing
+  ready
+  completed
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  completed
+}
+
+enum DeliveryStatus {
+  pending
+  preparing
+  ready
+  out_for_delivery
+  delivered
+  cancelled
+}
+
+enum UserRole {
+  admin
+  manager
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum RiderStatus {
+  active
+  inactive
+}
+
+// Models
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique @db.VarChar(255)
+  description String?    @db.Text
+  menuItems   MenuItem[]
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id          Int         @id @default(autoincrement())
+  name        String      @db.VarChar(255)
+  description String?     @db.Text
+  price       Decimal     @db.Decimal(10, 2)
+  categoryId  Int?
+  category    Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  imageUrl    String?     @map("image_url") @db.VarChar(500)
+  available   Boolean     @default(true)
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([available])
+  @@map("menu_items")
+}
+
+model Order {
+  id                  Int             @id @default(autoincrement())
+  totalAmount         Decimal         @map("total_amount") @db.Decimal(10, 2)
+  subtotal            Decimal?        @db.Decimal(10, 2)
+  discountPercent     Decimal?        @default(0) @map("discount_percent") @db.Decimal(5, 2)
+  paymentMethod       String          @default("cash") @map("payment_method") @db.VarChar(50)
+  amountTaken         Decimal?        @map("amount_taken") @db.Decimal(10, 2)
+  returnAmount        Decimal?        @map("return_amount") @db.Decimal(10, 2)
+  status              String          @default("completed") @db.VarChar(50)
+  orderType           OrderType       @default(dine_in) @map("order_type")
+  orderStatus         OrderStatus     @default(pending) @map("order_status")
+  paymentStatus       PaymentStatus   @default(completed) @map("payment_status")
+  tableNumber         Int?            @map("table_number")
+  orderNumber         Int?            @map("order_number")
+  customerId          Int?            @map("customer_id")
+  riderId             Int?            @map("rider_id")
+  deliveryCharge      Decimal         @default(0) @map("delivery_charge") @db.Decimal(10, 2)
+  deliveryAddress     String?         @map("delivery_address") @db.Text
+  deliveryNotes       String?         @map("delivery_notes") @db.Text
+  deliveryStatus      DeliveryStatus? @map("delivery_status")
+  specialInstructions String?         @map("special_instructions") @db.Text
+  cashierName         String          @default("Cashier") @map("cashier_name") @db.VarChar(255)
+  assignedAt          DateTime?       @map("assigned_at")
+  deliveredAt         DateTime?       @map("delivered_at")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  customer         Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  rider            Rider?             @relation(fields: [riderId], references: [id], onDelete: SetNull)
+  orderItems       OrderItem[]
+  orderEditHistory OrderEditHistory[]
+
+  // Indexes
+  @@index([orderType])
+  @@index([orderStatus])
+  @@index([paymentStatus])
+  @@index([deliveryStatus])
+  @@index([customerId])
+  @@index([riderId])
+  @@index([tableNumber])
+  @@index([createdAt, orderNumber])
+  @@index([createdAt])
+  @@index([assignedAt])
+  @@index([deliveredAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int     @id @default(autoincrement())
+  orderId    Int     @map("order_id")
+  menuItemId Int     @map("menu_item_id")
+  quantity   Int
+  price      Decimal @db.Decimal(10, 2)
+
+  // Relations
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("order_items")
+}
+
+model Expense {
+  id            Int       @id @default(autoincrement())
+  description   String    @db.Text
+  amount        Decimal   @db.Decimal(10, 2)
+  category      String?   @db.VarChar(255)
+  paymentMethod String    @default("cash") @map("payment_method") @db.VarChar(50)
+  quantity      Decimal   @default(1) @db.Decimal(10, 2)
+  unit          String    @default("PCS") @db.VarChar(50)
+  unitPrice     Decimal?  @map("unit_price") @db.Decimal(10, 2)
+  expenseDate   DateTime? @map("expense_date")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([createdAt])
+  @@map("expenses")
+}
+
+model BusinessInfo {
+  id    Int    @id @default(autoincrement())
+  key   String @unique @db.VarChar(255)
+  value String @db.Text
+
+  @@map("business_info")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  username  String     @unique @db.VarChar(100)
+  password  String     @db.VarChar(255)
+  fullName  String     @map("full_name") @db.VarChar(200)
+  role      UserRole
+  email     String?    @db.VarChar(255)
+  phone     String?    @db.VarChar(50)
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@index([username])
+  @@index([role])
+  @@map("users")
+}
+
+model Customer {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  phone       String   @unique @db.VarChar(20)
+  backupPhone String?  @map("backup_phone") @db.VarChar(20)
+  address     String   @db.Text
+  notes       String?  @db.Text
+  totalOrders Int      @default(0) @map("total_orders")
+  totalSpent  Decimal  @default(0) @map("total_spent") @db.Decimal(10, 2)
+  orders      Order[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([phone])
+  @@index([name])
+  @@index([createdAt])
+  @@map("customers")
+}
+
+model Rider {
+  id                 Int         @id @default(autoincrement())
+  name               String      @db.VarChar(255)
+  phone              String      @unique @db.VarChar(20)
+  address            String?     @db.Text
+  cnic               String?     @unique @db.VarChar(20)
+  status             RiderStatus @default(active)
+  totalDeliveries    Int         @default(0) @map("total_deliveries")
+  totalCashCollected Decimal     @default(0) @map("total_cash_collected") @db.Decimal(10, 2)
+  orders             Order[]
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  @@index([phone])
+  @@index([status])
+  @@index([cnic])
+  @@map("riders")
+}
+
+model OrderEditHistory {
+  id               Int      @id @default(autoincrement())
+  orderId          Int      @map("order_id")
+  editedBy         String   @default("System") @map("edited_by") @db.VarChar(100)
+  editedAt         DateTime @default(now()) @map("edited_at")
+  oldTotalAmount   Decimal? @map("old_total_amount") @db.Decimal(10, 2)
+  oldPaymentMethod String?  @map("old_payment_method") @db.VarChar(50)
+  oldAmountTaken   Decimal? @map("old_amount_taken") @db.Decimal(10, 2)
+  oldReturnAmount  Decimal? @map("old_return_amount") @db.Decimal(10, 2)
+  oldItems         String?  @map("old_items") @db.Text
+  newTotalAmount   Decimal? @map("new_total_amount") @db.Decimal(10, 2)
+  newPaymentMethod String?  @map("new_payment_method") @db.VarChar(50)
+  newAmountTaken   Decimal? @map("new_amount_taken") @db.Decimal(10, 2)
+  newReturnAmount  Decimal? @map("new_return_amount") @db.Decimal(10, 2)
+  newItems         String?  @map("new_items") @db.Text
+  changeReason     String?  @map("change_reason") @db.VarChar(255)
+  ipAddress        String?  @map("ip_address") @db.VarChar(45)
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([orderId])
+  @@index([editedAt])
+  @@map("order_edit_history")
+}
