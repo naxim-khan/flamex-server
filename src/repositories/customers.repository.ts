@@ -29,6 +29,15 @@ export class CustomersRepository {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
+        include: {
+          addresses: {
+            orderBy: [
+              { isDefault: 'desc' },
+              { createdAt: 'asc' }
+            ],
+            take: 1 // Only get first/default address for list view
+          }
+        }
       }),
       prisma.customer.count({ where }),
     ]);
@@ -51,6 +60,12 @@ export class CustomersRepository {
         _count: {
           select: { orders: true },
         },
+        addresses: {
+          orderBy: [
+            { isDefault: 'desc' },
+            { createdAt: 'asc' }
+          ]
+        }
       },
     });
   }
@@ -63,11 +78,27 @@ export class CustomersRepository {
         { phone: { contains: query, mode: 'insensitive' } },
         { backupPhone: { contains: query, mode: 'insensitive' } },
         { address: { contains: query, mode: 'insensitive' } },
+        {
+          addresses: {
+            some: {
+              address: { contains: query, mode: 'insensitive' }
+            }
+          }
+        }
       ],
     };
 
     return await prisma.customer.findMany({
       where,
+      include: {
+        addresses: {
+          orderBy: [
+            { isDefault: 'desc' },
+            { createdAt: 'asc' }
+          ],
+          take: 1 // Only get first address for search results
+        }
+      },
       orderBy: { createdAt: 'desc' },
       take: 50, // Limit results
     });
@@ -76,6 +107,36 @@ export class CustomersRepository {
   static async findCustomerByPhone(phone: string) {
     return await prisma.customer.findUnique({
       where: { phone },
+      include: {
+        addresses: {
+          orderBy: [
+            { isDefault: 'desc' },
+            { createdAt: 'asc' }
+          ]
+        }
+      }
+    });
+  }
+
+  static async findCustomersByPartialPhone(partialPhone: string, limit: number = 10) {
+    return await prisma.customer.findMany({
+      where: {
+        OR: [
+          { phone: { contains: partialPhone, mode: 'insensitive' } },
+          { backupPhone: { contains: partialPhone, mode: 'insensitive' } }
+        ]
+      },
+      include: {
+        addresses: {
+          orderBy: [
+            { isDefault: 'desc' },
+            { createdAt: 'asc' }
+          ],
+          take: 1 // Only get first address for search results
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit
     });
   }
 
@@ -169,6 +230,121 @@ export class CustomersRepository {
         totalOrders: orders,
         totalSpent: revenue._sum.totalAmount || 0,
       },
+    });
+  }
+
+  // Customer Address methods
+  static async getCustomerAddresses(customerId: number) {
+    return await prisma.customerAddress.findMany({
+      where: { customerId },
+      orderBy: [
+        { isDefault: 'desc' },
+        { createdAt: 'asc' }
+      ]
+    });
+  }
+
+  static async findCustomerAddressById(addressId: number) {
+    return await prisma.customerAddress.findUnique({
+      where: { id: addressId }
+    });
+  }
+
+  static async createCustomerAddress(data: {
+    customerId: number;
+    address: string;
+    isDefault?: boolean;
+    notes?: string;
+  }) {
+    // Check if address already exists for this customer (case-insensitive)
+    const existingAddresses = await prisma.customerAddress.findMany({
+      where: { customerId: data.customerId }
+    });
+
+    const normalizedNewAddress = data.address.trim().toLowerCase();
+    const duplicate = existingAddresses.find(
+      addr => addr.address.trim().toLowerCase() === normalizedNewAddress
+    );
+
+    if (duplicate) {
+      throw new Error('Address already exists for this customer');
+    }
+
+    // If this is set as default, unset other defaults
+    if (data.isDefault) {
+      await prisma.customerAddress.updateMany({
+        where: { customerId: data.customerId, isDefault: true },
+        data: { isDefault: false }
+      });
+    }
+
+    return await prisma.customerAddress.create({
+      data: {
+        customerId: data.customerId,
+        address: data.address.trim(),
+        isDefault: data.isDefault || false,
+        notes: data.notes
+      }
+    });
+  }
+
+  static async updateCustomerAddress(addressId: number, data: {
+    address?: string;
+    isDefault?: boolean;
+    notes?: string;
+  }) {
+    const existingAddress = await prisma.customerAddress.findUnique({
+      where: { id: addressId }
+    });
+
+    if (!existingAddress) {
+      throw new Error('Address not found');
+    }
+
+    // If updating address text, check for duplicates
+    if (data.address) {
+      const normalizedNewAddress = data.address.trim().toLowerCase();
+      const existingAddresses = await prisma.customerAddress.findMany({
+        where: {
+          customerId: existingAddress.customerId,
+          id: { not: addressId }
+        }
+      });
+
+      const duplicate = existingAddresses.find(
+        addr => addr.address.trim().toLowerCase() === normalizedNewAddress
+      );
+
+      if (duplicate) {
+        throw new Error('Address already exists for this customer');
+      }
+    }
+
+    // If setting as default, unset other defaults
+    if (data.isDefault) {
+      await prisma.customerAddress.updateMany({
+        where: {
+          customerId: existingAddress.customerId,
+          id: { not: addressId },
+          isDefault: true
+        },
+        data: { isDefault: false }
+      });
+    }
+
+    return await prisma.customerAddress.update({
+      where: { id: addressId },
+      data: {
+        ...(data.address && { address: data.address.trim() }),
+        ...(data.isDefault !== undefined && { isDefault: data.isDefault }),
+        ...(data.notes !== undefined && { notes: data.notes })
+      }
+    });
+  }
+
+  static async deleteCustomerAddress(addressId: number) {
+    return await prisma.customerAddress.delete({
+      where: { id: addressId }
     });
   }
 }

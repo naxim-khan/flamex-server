@@ -93,4 +93,99 @@ export class CustomersController {
       next(error);
     }
   }
+
+  static async searchCustomersByPhone(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { q } = req.query;
+      const limit = parseInt((req.query.limit as string) || '10');
+      
+      if (!q || (q as string).trim().length < 1) {
+        return res.json(ApiResponse.success('Customers retrieved successfully', []));
+      }
+
+      const customers = await CustomersService.searchCustomersByPhone((q as string).trim(), limit);
+      return res.json(ApiResponse.success('Customers retrieved successfully', customers));
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async getCustomerAddresses(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const addresses = await CustomersService.getCustomerAddresses(parseInt(id));
+      return res.json(ApiResponse.success('Customer addresses retrieved successfully', addresses));
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async createCustomerAddress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { address, isDefault, notes } = req.body;
+
+      if (!address || !address.trim()) {
+        return res.status(400).json(ApiResponse.error('Address is required'));
+      }
+
+      const newAddress = await CustomersService.createCustomerAddress(parseInt(id), {
+        address,
+        isDefault,
+        notes
+      });
+
+      return res.status(201).json(ApiResponse.success('Address created successfully', newAddress));
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async updateCustomerAddress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { addressId } = req.params;
+      const { address, isDefault, notes } = req.body;
+
+      const updatedAddress = await CustomersService.updateCustomerAddress(parseInt(addressId), {
+        address,
+        isDefault,
+        notes
+      });
+
+      return res.json(ApiResponse.success('Address updated successfully', updatedAddress));
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async deleteCustomerAddress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { addressId } = req.params;
+      await CustomersService.deleteCustomerAddress(parseInt(addressId));
+      return res.json(ApiResponse.success('Address deleted successfully'));
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  static async findOrCreateCustomer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { phone, name, address, backupPhone, notes } = req.body;
+
+      if (!phone || !phone.trim()) {
+        return res.status(400).json(ApiResponse.error('Phone number is required'));
+      }
+
+      const customer = await CustomersService.findOrCreateCustomerByPhone(phone.trim(), {
+        name,
+        address,
+        backupPhone,
+        notes
+      });
+
+      return res.json(ApiResponse.success('Customer retrieved or created successfully', customer));
+    } catch (error) {
+      return next(error);
+    }
+  }
 }

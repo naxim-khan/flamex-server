@@ -58,6 +58,11 @@ export type User = Prisma.UserModel
  */
 export type Customer = Prisma.CustomerModel
 /**
+ * Model CustomerAddress
+ * 
+ */
+export type CustomerAddress = Prisma.CustomerAddressModel
+/**
  * Model Rider
  * 
  */

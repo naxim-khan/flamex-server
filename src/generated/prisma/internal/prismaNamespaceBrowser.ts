@@ -59,6 +59,7 @@ export const ModelName = {
   BusinessInfo: 'BusinessInfo',
   User: 'User',
   Customer: 'Customer',
+  CustomerAddress: 'CustomerAddress',
   Rider: 'Rider',
   OrderEditHistory: 'OrderEditHistory'
 } as const
@@ -203,6 +204,19 @@ export const CustomerScalarFieldEnum = {
 } as const
 
 export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
+
+
+export const CustomerAddressScalarFieldEnum = {
+  id: 'id',
+  customerId: 'customerId',
+  address: 'address',
+  isDefault: 'isDefault',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomerAddressScalarFieldEnum = (typeof CustomerAddressScalarFieldEnum)[keyof typeof CustomerAddressScalarFieldEnum]
 
 
 export const RiderScalarFieldEnum = {

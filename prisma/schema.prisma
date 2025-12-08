@@ -194,22 +194,42 @@ model User {
 }
 
 model Customer {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(255)
-  phone       String   @unique @db.VarChar(20)
-  backupPhone String?  @map("backup_phone") @db.VarChar(20)
-  address     String   @db.Text
-  notes       String?  @db.Text
-  totalOrders Int      @default(0) @map("total_orders")
-  totalSpent  Decimal  @default(0) @map("total_spent") @db.Decimal(10, 2)
+  id          Int               @id @default(autoincrement())
+  name        String            @db.VarChar(255)
+  phone       String            @unique @db.VarChar(20)
+  backupPhone String?           @map("backup_phone") @db.VarChar(20)
+  address     String            @db.Text // Kept for backward compatibility
+  notes       String?           @db.Text
+  totalOrders Int               @default(0) @map("total_orders")
+  totalSpent  Decimal           @default(0) @map("total_spent") @db.Decimal(10, 2)
   orders      Order[]
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  addresses   CustomerAddress[]
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
 
   @@index([phone])
   @@index([name])
   @@index([createdAt])
   @@map("customers")
+}
+
+model CustomerAddress {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @map("customer_id")
+  address    String   @db.Text
+  isDefault  Boolean  @default(false) @map("is_default")
+  notes      String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Unique constraint: one address per customer (case-insensitive comparison handled in application)
+  @@unique([customerId, address])
+  @@index([customerId])
+  @@index([isDefault])
+  @@map("customer_addresses")
 }
 
 model Rider {

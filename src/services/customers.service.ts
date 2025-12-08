@@ -96,4 +96,113 @@ export class CustomersService {
     }
     return customer;
   }
+
+  static async searchCustomersByPhone(partialPhone: string, limit: number = 10) {
+    if (!partialPhone || partialPhone.trim().length < 1) {
+      return [];
+    }
+    return await CustomersRepository.findCustomersByPartialPhone(partialPhone.trim(), limit);
+  }
+
+  static async getCustomerAddresses(customerId: number) {
+    const customer = await CustomersRepository.findCustomerById(customerId);
+    if (!customer) {
+      throw new ApiError(404, 'Customer not found');
+    }
+    return await CustomersRepository.getCustomerAddresses(customerId);
+  }
+
+  static async createCustomerAddress(customerId: number, data: {
+    address: string;
+    isDefault?: boolean;
+    notes?: string;
+  }) {
+    const customer = await CustomersRepository.findCustomerById(customerId);
+    if (!customer) {
+      throw new ApiError(404, 'Customer not found');
+    }
+
+    try {
+      return await CustomersRepository.createCustomerAddress({
+        customerId,
+        address: data.address,
+        isDefault: data.isDefault,
+        notes: data.notes
+      });
+    } catch (error: any) {
+      if (error.message === 'Address already exists for this customer') {
+        throw new ApiError(400, 'Address already exists for this customer');
+      }
+      throw error;
+    }
+  }
+
+  static async updateCustomerAddress(addressId: number, data: {
+    address?: string;
+    isDefault?: boolean;
+    notes?: string;
+  }) {
+    try {
+      return await CustomersRepository.updateCustomerAddress(addressId, data);
+    } catch (error: any) {
+      if (error.message === 'Address not found') {
+        throw new ApiError(404, 'Address not found');
+      }
+      if (error.message === 'Address already exists for this customer') {
+        throw new ApiError(400, 'Address already exists for this customer');
+      }
+      throw error;
+    }
+  }
+
+  static async deleteCustomerAddress(addressId: number) {
+    const address = await CustomersRepository.findCustomerAddressById(addressId);
+    if (!address) {
+      throw new ApiError(404, 'Address not found');
+    }
+    return await CustomersRepository.deleteCustomerAddress(addressId);
+  }
+
+  static async findOrCreateCustomerByPhone(phone: string, customerData?: {
+    name?: string;
+    address?: string;
+    backupPhone?: string;
+    notes?: string;
+  }) {
+    // Try to find existing customer
+    let customer = await CustomersRepository.findCustomerByPhone(phone);
+
+    if (!customer) {
+      // Create new customer
+      if (!customerData?.name) {
+        throw new ApiError(400, 'Customer name is required when creating a new customer');
+      }
+      if (!customerData?.address) {
+        throw new ApiError(400, 'Address is required when creating a new customer');
+      }
+
+      customer = await CustomersRepository.createCustomer({
+        name: customerData.name,
+        phone: phone.trim(),
+        backupPhone: customerData.backupPhone,
+        address: customerData.address, // Legacy field
+        notes: customerData.notes
+      });
+
+      // Create the first address in the addresses table
+      if (customerData.address) {
+        await CustomersRepository.createCustomerAddress({
+          customerId: customer.id,
+          address: customerData.address,
+          isDefault: true,
+          notes: customerData.notes
+        });
+      }
+
+      // Fetch customer again with addresses
+      customer = await CustomersRepository.findCustomerByPhone(phone);
+    }
+
+    return customer;
+  }
 }
