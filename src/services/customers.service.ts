@@ -181,7 +181,7 @@ export class CustomersService {
         throw new ApiError(400, 'Address is required when creating a new customer');
       }
 
-      customer = await CustomersRepository.createCustomer({
+      const newCustomer = await CustomersRepository.createCustomer({
         name: customerData.name,
         phone: phone.trim(),
         backupPhone: customerData.backupPhone,
@@ -189,10 +189,14 @@ export class CustomersService {
         notes: customerData.notes
       });
 
+      if (!newCustomer) {
+        throw new ApiError(500, 'Failed to create customer');
+      }
+
       // Create the first address in the addresses table
       if (customerData.address) {
         await CustomersRepository.createCustomerAddress({
-          customerId: customer.id,
+          customerId: newCustomer.id,
           address: customerData.address,
           isDefault: true,
           notes: customerData.notes
