@@ -30,6 +30,7 @@ const configSchema = z.object({
   SESSION_COOKIE_MAX_AGE: z.coerce.number().default(604800000),
 
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  CORS_ORIGIN_LOCAL_HOST: z.string().optional(),
   CORS_CREDENTIALS: z.coerce.boolean().default(true),
 
   PRINTER_VENDOR_ID: z.string().optional(),

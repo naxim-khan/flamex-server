@@ -18,8 +18,13 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+const corsOrigins = [
+  ...config.CORS_ORIGIN.split(',').map(o => o.trim()).filter(Boolean),
+  ...(config.CORS_ORIGIN_LOCAL_HOST ? config.CORS_ORIGIN_LOCAL_HOST.split(',').map(o => o.trim()).filter(Boolean) : []),
+];
+
 const corsOptions = {
-  origin: config.CORS_ORIGIN.split(','),
+  origin: corsOrigins,
   credentials: config.CORS_CREDENTIALS,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
