@@ -283,11 +283,12 @@ export class OrdersService {
       if (!data.amountTaken) {
         throw new ApiError(400, 'Amount taken is required for cash payments');
       }
-      if (data.amountTaken < Number(order.totalAmount)) {
-        throw new ApiError(400, 'Amount taken must be greater than or equal to total amount');
-      }
+      // Allow partial payments - if amountTaken is less than total, returnAmount will be negative
       updateData.amountTaken = data.amountTaken;
-      updateData.returnAmount = data.returnAmount || data.amountTaken - Number(order.totalAmount);
+      // Calculate returnAmount: positive if change given, negative if amount is less than total
+      updateData.returnAmount = data.returnAmount !== undefined 
+        ? data.returnAmount 
+        : data.amountTaken - Number(order.totalAmount);
     } else {
       updateData.amountTaken = null;
       updateData.returnAmount = null;

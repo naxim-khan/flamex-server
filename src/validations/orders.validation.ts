@@ -48,7 +48,7 @@ export const markAsPaidSchema = z.object({
   body: z.object({
     paymentMethod: z.enum(['cash', 'bank_transfer']),
     amountTaken: z.number().positive().optional(),
-    returnAmount: z.number().positive().optional(),
+    returnAmount: z.number().optional(), // Allow negative values for partial payments
   }),
 });
 
